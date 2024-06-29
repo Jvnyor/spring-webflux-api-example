@@ -1,6 +1,8 @@
 package com.jvnyor.reactive.controller;
 
 import com.jvnyor.reactive.model.User;
+import com.jvnyor.reactive.model.dto.UserRequestDTO;
+import com.jvnyor.reactive.model.dto.UserResponseDTO;
 import com.jvnyor.reactive.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +22,7 @@ class UserControllerIntTest {
 
     @Test
     void givenUserToCreate_whenCreateUser_thenReturnUserCreated() {
-        final User user = new User(
-                null,
+        final UserRequestDTO userRequestDTO = new UserRequestDTO(
                 "user",
                 "123",
                 "user@gmail.com"
@@ -29,19 +30,35 @@ class UserControllerIntTest {
 
         webTestClient.post()
                 .uri("/api/v1/users")
-                .bodyValue(user)
+                .bodyValue(userRequestDTO)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(User.class)
+                .expectBody(UserResponseDTO.class)
                 .value(postUser -> {
-                    assertAll("User",
+                    assertAll("User response",
                             () -> assertNotNull(postUser.id()),
-                            () -> assertEquals(user.username(), postUser.username()),
-                            () -> assertEquals(user.password(), postUser.password()),
-                            () -> assertEquals(user.email(), postUser.email()),
-                            () -> assertNotEquals(user.id(), postUser.id())
+                            () -> assertEquals(userRequestDTO.username(), postUser.username()),
+                            () -> assertNotNull(userRequestDTO.password()),
+                            () -> assertEquals(userRequestDTO.email(), postUser.email()),
+                            () -> assertNotNull(postUser.id())
                     );
                 });
+    }
+
+    @Test
+    void givenUserToCreateWithInvalidEmail_whenCreateUser_thenExceptionIsThrown() {
+        final User user = new User(
+                null,
+                "user",
+                "123",
+                "user"
+        );
+
+        webTestClient.post()
+                .uri("/api/v1/users")
+                .bodyValue(user)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @Test
